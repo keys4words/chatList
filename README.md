@@ -1,54 +1,206 @@
-# chatList
+# ChatList
 
-A minimal Python application with PyQt GUI.
+Приложение для отправки одного промта в несколько нейросетей и сравнения их ответов.
 
-## Installation
+## Установка
 
-Install the required dependencies:
+1. Установите зависимости:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-## Running the Application
+2. Создайте файл `.env` в корне проекта и добавьте ваши API-ключи:
 
-Run the application with:
+```
+OPENAI_API_KEY=sk-your-key-here
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+DEEPSEEK_API_KEY=sk-your-key-here
+GROQ_API_KEY=gsk_your-key-here
 
-```powershell
-python app.py
+# Для моделей через OPENAI_BASE_URL (OLMO-3.1, Mistral, DeepSeek)
+OPENAI_BASE_URL=https://api.proxyapi.ru/openrouter/v1
+OLMO-3.1_API_KEY=your-olmo-key
+MISTRAL_API_KEY=your-mistral-key
+DEEPSEEK_API_KEY=your-deepseek-key
+
+# Опционально: имена моделей для API (если не заданы, используются значения по умолчанию)
+OLMO-3.1_MODEL_NAME=meta-llama/llama-3.1-405b-instruct
+MISTRAL_MODEL_NAME=mistralai/mistral-medium-3
+DEEPSEEK_MODEL_NAME=deepseek/deepseek-chat
+
+# Опционально: таймаут запросов в секундах (по умолчанию 120)
+REQUEST_TIMEOUT=120
+
+# Опционально: задержка между запросами к разным моделям в секундах (для избежания rate limiting)
+# Рекомендуется 0.5-1.0 секунды при работе с несколькими моделями
+DELAY_BETWEEN_REQUESTS=0.5
 ```
 
-## Building Executable
+3. Инициализируйте базу данных с примерами моделей (опционально):
 
-To create an executable (.exe) file:
-
-1. Install PyInstaller (included in requirements.txt):
 ```powershell
-pip install -r requirements.txt
+python init_db.py
 ```
 
-2. Build the executable using one of the build scripts:
+## Запуск приложения
+
+Запустите приложение:
+
+```powershell
+python main.py
+```
+
+## Сборка исполняемого файла
+
+Для создания исполняемого файла (.exe):
+
+1. Установите PyInstaller (уже включен в requirements.txt)
+
+2. Соберите исполняемый файл:
+```powershell
+pyinstaller --onefile --windowed --name "ChatList" main.py
+```
+
+Или используйте скрипты:
 ```powershell
 .\build.ps1
 ```
-or
+или
 ```powershell
 .\build.bat
 ```
 
-Or manually with PyInstaller:
+Исполняемый файл будет создан в папке `dist`.
+
+## Структура проекта
+
+- `main.py` - главный модуль с пользовательским интерфейсом
+- `db.py` - модуль для работы с базой данных SQLite
+- `models.py` - модуль для работы с моделями нейросетей
+- `network.py` - модуль для отправки HTTP-запросов к API
+- `export.py` - модуль для экспорта данных в различные форматы
+- `logger.py` - модуль для логирования запросов
+- `models_dialog.py` - диалог управления моделями
+- `init_db.py` - скрипт для инициализации базы данных
+- `test_app.py` - тесты для проверки функциональности
+- `chatlist.db` - база данных SQLite (создается автоматически)
+- `logs/` - папка с логами приложения
+
+## Основные функции
+
+- ✅ Отправка одного промта в несколько активных нейросетей одновременно
+- ✅ Отображение результатов в таблице с возможностью выбора
+- ✅ Сохранение промтов и результатов в базу данных
+- ✅ Выбор из сохраненных промтов
+- ✅ Теги для категоризации промтов
+- ✅ Асинхронная отправка запросов для быстрой работы
+- ✅ Поиск по промтам и результатам
+- ✅ Сортировка результатов по дате, тегам, модели
+- ✅ Экспорт результатов в Markdown и JSON
+- ✅ Управление моделями через графический интерфейс
+- ✅ Логирование всех запросов в файл
+
+## Использование
+
+1. Введите промт в текстовое поле или выберите сохраненный промт из списка
+2. Нажмите "Отправить запрос" для отправки во все активные модели
+3. Просмотрите результаты в таблице
+4. Отметьте нужные результаты чекбоксами
+5. Нажмите "Сохранить выбранные" для сохранения в базу данных
+
+## Поддерживаемые модели
+
+- OpenAI (GPT-4, GPT-3.5-turbo)
+- DeepSeek
+- Groq
+- OpenRouter (поддержка множества моделей через единый API)
+  - **Важно:** Используйте правильные имена моделей из [OpenRouter Models](https://openrouter.ai/models)
+  - Примеры: `openai/gpt-4`, `gpt-oss/gpt-oss-8b`, `meta-llama/llama-3.1-405b-instruct`
+- **OLMO-3.1, Mistral, DeepSeek через OPENAI_BASE_URL** (новое!)
+
+Для добавления новых моделей используйте меню "Модели" → "Управление моделями..." в приложении.
+
+### Модели через OPENAI_BASE_URL
+
+Приложение поддерживает использование нескольких моделей через один базовый URL с разными API-ключами (как в примере с proxyapi.ru/openrouter):
+
+1. Добавьте в `.env`:
+   ```
+   OPENAI_BASE_URL=https://api.proxyapi.ru/openrouter/v1
+   OLMO-3.1_API_KEY=your-olmo-key
+   MISTRAL_API_KEY=your-mistral-key
+   DEEPSEEK_API_KEY=your-deepseek-key
+   ```
+
+2. Запустите `python init_db.py` - модели будут добавлены автоматически
+
+3. Или добавьте вручную через интерфейс:
+   - Название: `olmo-3.1` (или `mistral`, `deepseek`) - будет автоматически преобразовано в полное имя модели
+   - API URL: `https://api.proxyapi.ru/openrouter/v1/chat/completions` (будет заменен на OPENAI_BASE_URL автоматически)
+   - API ID: `OLMO-3.1_API_KEY` (или `MISTRAL_API_KEY`, `DEEPSEEK_API_KEY`)
+   - Тип: `openai-compatible`
+
+**Имена моделей (настраиваются через .env):**
+- Можно задать имена моделей в `.env` через переменные:
+  - `OLMO-3.1_MODEL_NAME=meta-llama/llama-3.1-405b-instruct`
+  - `MISTRAL_MODEL_NAME=mistralai/mistral-medium-3`
+  - `DEEPSEEK_MODEL_NAME=deepseek/deepseek-chat`
+- Если переменные не заданы, используются значения по умолчанию:
+  - `olmo-3.1` → `meta-llama/llama-3.1-405b-instruct`
+  - `mistral` → `mistralai/mistral-medium-3`
+  - `deepseek` → `deepseek/deepseek-chat`
+- Если имя модели не найдено в маппинге, используется имя из БД как есть
+
+**Формат переменных окружения:**
+- Для API-ключа: `{MODEL}_API_KEY` (например, `OLMO-3.1_API_KEY`)
+- Для имени модели: `{MODEL}_MODEL_NAME` (например, `OLMO-3.1_MODEL_NAME`)
+
+## Дополнительные возможности
+
+### Поиск и фильтрация
+- Поиск по промтам через поле поиска или меню "Промты" → "Поиск промтов"
+- Поиск по сохраненным результатам через меню "Результаты" → "Поиск результатов"
+- Фильтрация промтов в выпадающем списке
+
+### Экспорт данных
+- Экспорт текущих результатов в Markdown или JSON через кнопку "Экспорт"
+- Экспорт всех сохраненных результатов через меню "Файл" → "Экспорт результатов"
+
+### Управление моделями
+- Добавление новых моделей через диалог управления
+- Редактирование существующих моделей
+- Активация/деактивация моделей
+- Удаление моделей
+
+### Логирование
+- Все запросы логируются в файлы в папке `logs/`
+- Логи сохраняются по дням (один файл на день)
+- Уровни логирования: INFO, ERROR, DEBUG
+
+## Тестирование
+
+Для запуска тестов:
+
 ```powershell
-pyinstaller --onefile --windowed --name "MinimalPyQtApp" app.py
+python test_app.py
 ```
 
-The executable will be created in the `dist` folder.
+Тесты проверяют:
+- Работу с базой данных
+- Создание и работу с моделями
+- Экспорт данных
 
-**PyInstaller options:**
-- `--onefile`: Creates a single executable file
-- `--windowed`: Hides the console window (no terminal window)
-- `--name`: Sets the name of the executable
+## Настройка OpenRouter
 
-## Features
+Для использования OpenRouter добавьте в `.env`:
 
-- Simple PyQt5 GUI window
-- Interactive button that updates the label text
+```
+OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+Затем добавьте модель через интерфейс управления моделями:
+- Название: `openai/gpt-4` (или любая другая модель из OpenRouter)
+- API URL: `https://openrouter.ai/api/v1/chat/completions`
+- API ID: `OPENROUTER_API_KEY`
+- Тип: `openrouter`

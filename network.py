@@ -131,8 +131,32 @@ class NetworkManager:
             # Улучшенная обработка ошибок HTTP
             if hasattr(e, 'response') and e.response is not None:
                 status_code = e.response.status_code
-                if status_code == 404:
-                    error_msg = f"404 Not Found - Модель '{model.name}' не найдена. Проверьте правильность имени модели в настройках."
+                
+                # Пытаемся извлечь детальное сообщение об ошибке из JSON
+                error_detail = None
+                try:
+                    error_json = e.response.json()
+                    if isinstance(error_json, dict):
+                        if "error" in error_json:
+                            if isinstance(error_json["error"], dict) and "message" in error_json["error"]:
+                                error_detail = error_json["error"]["message"]
+                            elif isinstance(error_json["error"], str):
+                                error_detail = error_json["error"]
+                        elif "message" in error_json:
+                            error_detail = error_json["message"]
+                except:
+                    pass  # Если не удалось распарсить, используем общее сообщение
+                
+                if status_code == 400:
+                    if error_detail:
+                        error_msg = f"400 Bad Request - {error_detail}. Проверьте правильность имени модели '{model.name}' в настройках."
+                    else:
+                        error_msg = f"400 Bad Request - Некорректный запрос. Проверьте правильность имени модели '{model.name}' и параметров запроса."
+                elif status_code == 404:
+                    if error_detail:
+                        error_msg = f"404 Not Found - {error_detail}. Модель '{model.name}' не найдена."
+                    else:
+                        error_msg = f"404 Not Found - Модель '{model.name}' не найдена. Проверьте правильность имени модели в настройках."
                 elif status_code == 401:
                     error_msg = f"401 Unauthorized - Неверный API ключ для {model.api_id}"
                 elif status_code == 402:
@@ -140,7 +164,10 @@ class NetworkManager:
                 elif status_code == 429:
                     error_msg = f"429 Too Many Requests - Превышен лимит запросов"
                 else:
-                    error_msg = f"Ошибка запроса ({status_code}): {str(e)}"
+                    if error_detail:
+                        error_msg = f"Ошибка запроса ({status_code}): {error_detail}"
+                    else:
+                        error_msg = f"Ошибка запроса ({status_code}): {str(e)}"
             else:
                 error_msg = f"Ошибка запроса: {str(e)}"
             
@@ -211,8 +238,32 @@ class NetworkManager:
                         # Повторная попытка
                         return await self.send_request_async(model, prompt, retry_count + 1)
                     
-                    if status_code == 404:
-                        error_msg = f"404 Not Found - Модель '{model.name}' не найдена. Проверьте правильность имени модели в настройках."
+                    # Пытаемся распарсить JSON ошибки для более детального сообщения
+                    error_detail = None
+                    try:
+                        import json
+                        error_json = json.loads(error_text)
+                        if isinstance(error_json, dict):
+                            if "error" in error_json:
+                                if isinstance(error_json["error"], dict) and "message" in error_json["error"]:
+                                    error_detail = error_json["error"]["message"]
+                                elif isinstance(error_json["error"], str):
+                                    error_detail = error_json["error"]
+                            elif "message" in error_json:
+                                error_detail = error_json["message"]
+                    except:
+                        pass  # Если не удалось распарсить, используем общее сообщение
+                    
+                    if status_code == 400:
+                        if error_detail:
+                            error_msg = f"400 Bad Request - {error_detail}. Проверьте правильность имени модели '{model.name}' в настройках."
+                        else:
+                            error_msg = f"400 Bad Request - Некорректный запрос. Проверьте правильность имени модели '{model.name}' и параметров запроса."
+                    elif status_code == 404:
+                        if error_detail:
+                            error_msg = f"404 Not Found - {error_detail}. Модель '{model.name}' не найдена."
+                        else:
+                            error_msg = f"404 Not Found - Модель '{model.name}' не найдена. Проверьте правильность имени модели в настройках."
                     elif status_code == 401:
                         error_msg = f"401 Unauthorized - Неверный API ключ для {model.api_id}"
                     elif status_code == 402:
@@ -220,7 +271,10 @@ class NetworkManager:
                     elif status_code == 429:
                         error_msg = f"429 Too Many Requests - Превышен лимит запросов (попыток: {retry_count + 1})"
                     else:
-                        error_msg = f"Ошибка запроса ({status_code}): {error_text[:200]}"
+                        if error_detail:
+                            error_msg = f"Ошибка запроса ({status_code}): {error_detail}"
+                        else:
+                            error_msg = f"Ошибка запроса ({status_code}): {error_text[:200]}"
                     
                     return {
                         "success": False,

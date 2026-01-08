@@ -59,7 +59,8 @@ def init_sample_models():
             "api_url": "https://openrouter.ai/api/v1/chat/completions",
             "api_id": "OPENROUTER_API_KEY",
             "model_type": "openrouter",
-            "is_active": 1
+            "is_active": 1,
+            "api_model_name": "openai/gpt-4"
         }
     ]
     
@@ -114,7 +115,8 @@ def init_sample_models():
                 api_url=model["api_url"],
                 api_id=model["api_id"],
                 model_type=model["model_type"],
-                is_active=model["is_active"]
+                is_active=model["is_active"],
+                api_model_name=model.get("api_model_name")
             )
             print(f"Добавлена модель: {model['name']}")
         except Exception as e:

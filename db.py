@@ -107,7 +107,9 @@ class Database:
             "log_level": "INFO",
             "retry_on_429": "true",
             "max_retries": "3",
-            "delay_between_requests": "0.5"
+            "delay_between_requests": "0.5",
+            "theme": "light",
+            "font_size": "10"
         }
         
         cursor = self.conn.cursor()

@@ -10,10 +10,11 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QTextEdit, QPushButton, QTableWidget, QTableWidgetItem, QComboBox,
     QLabel, QCheckBox, QLineEdit, QMessageBox, QProgressBar, QSplitter,
-    QHeaderView, QGroupBox, QMenuBar, QAction, QFileDialog
+    QHeaderView, QGroupBox, QMenuBar, QAction, QFileDialog, QDialog
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
-from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtGui import QFont, QColor, QIcon, QPalette
+import os
 
 from db import Database
 from response_viewer import ResponseViewerDialog
@@ -22,6 +23,10 @@ from network import NetworkManager, TemporaryResults
 from export import ExportManager
 from logger import AppLogger
 from models_dialog import ModelsDialog
+from prompt_improver import PromptImprover
+from prompt_improver_dialog import PromptImproverDialog
+from settings_dialog import SettingsDialog
+from about_dialog import AboutDialog
 
 
 class RequestThread(QThread):
@@ -85,9 +90,11 @@ class MainWindow(QMainWindow):
         self.temp_results = TemporaryResults()
         self.export_manager = ExportManager(self.db)
         self.logger = AppLogger(self.db, log_to_file=True)
+        self.prompt_improver = PromptImprover(self.network_manager)
         self.current_prompt_id: Optional[int] = None
         
         self.init_ui()
+        self.apply_settings()
         self.load_prompts()
         self.load_models_info()
     
@@ -95,6 +102,11 @@ class MainWindow(QMainWindow):
         """Инициализация пользовательского интерфейса."""
         self.setWindowTitle("ChatList - Сравнение ответов нейросетей")
         self.setGeometry(100, 100, 1200, 800)
+        
+        # Установка иконки приложения
+        icon_path = os.path.join(os.path.dirname(__file__), "app.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         
         # Центральный виджет
         central_widget = QWidget()
@@ -145,6 +157,11 @@ class MainWindow(QMainWindow):
         self.send_button.clicked.connect(self.send_requests)
         self.send_button.setStyleSheet("font-weight: bold; padding: 5px;")
         buttons_layout.addWidget(self.send_button)
+        
+        self.improve_prompt_button = QPushButton("Улучшить промт")
+        self.improve_prompt_button.clicked.connect(self.improve_prompt)
+        self.improve_prompt_button.setToolTip("Улучшить промт с помощью AI")
+        buttons_layout.addWidget(self.improve_prompt_button)
         
         self.save_prompt_button = QPushButton("Сохранить промт")
         self.save_prompt_button.clicked.connect(self.save_prompt)
@@ -244,6 +261,19 @@ class MainWindow(QMainWindow):
         search_results_action = QAction("Поиск результатов...", self)
         search_results_action.triggered.connect(self.search_results)
         results_menu.addAction(search_results_action)
+        
+        # Меню "Справка"
+        help_menu = menubar.addMenu("Справка")
+        
+        settings_action = QAction("Настройки...", self)
+        settings_action.triggered.connect(self.show_settings)
+        help_menu.addAction(settings_action)
+        
+        help_menu.addSeparator()
+        
+        about_action = QAction("О программе...", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
     
     def load_prompts(self):
         """Загрузка сохраненных промтов в выпадающий список."""
@@ -585,6 +615,105 @@ class MainWindow(QMainWindow):
         dialog.exec_()
         self.load_models_info()
     
+    def improve_prompt(self):
+        """Открытие диалога улучшения промта."""
+        prompt_text = self.prompt_input.toPlainText().strip()
+        
+        if not prompt_text:
+            QMessageBox.warning(self, "Предупреждение", "Введите промт для улучшения!")
+            return
+        
+        # Получаем список активных моделей
+        models = ModelFactory.get_active_models(self.db)
+        
+        if not models:
+            QMessageBox.warning(self, "Предупреждение", "Нет активных моделей для улучшения промта!")
+            return
+        
+        # Открываем диалог улучшения
+        dialog = PromptImproverDialog(self.prompt_improver, models, prompt_text, self)
+        
+        if dialog.exec_() == QDialog.Accepted:
+            selected_prompt = dialog.get_selected_prompt()
+            if selected_prompt:
+                # Подставляем выбранный промт в поле ввода
+                self.prompt_input.setPlainText(selected_prompt)
+                QMessageBox.information(self, "Успех", "Улучшенный промт подставлен в поле ввода!")
+    
+    def show_settings(self):
+        """Открытие диалога настроек."""
+        dialog = SettingsDialog(self.db, self)
+        if dialog.exec_() == QDialog.Accepted:
+            # Применяем настройки сразу
+            self.apply_settings()
+    
+    def show_about(self):
+        """Открытие диалога 'О программе'."""
+        dialog = AboutDialog(self)
+        dialog.exec_()
+    
+    def apply_settings(self):
+        """Применение настроек темы и размера шрифта."""
+        # Применение темы
+        theme = self.db.get_setting("theme")
+        if theme == "dark":
+            self.apply_dark_theme()
+        else:
+            self.apply_light_theme()
+        
+        # Применение размера шрифта
+        font_size = self.db.get_setting("font_size")
+        if font_size:
+            try:
+                size = int(font_size)
+                self.apply_font_size(size)
+            except ValueError:
+                self.apply_font_size(10)
+        else:
+            self.apply_font_size(10)
+    
+    def apply_light_theme(self):
+        """Применение светлой темы."""
+        palette = QPalette()
+        palette.setColor(QPalette.Window, QColor(255, 255, 255))
+        palette.setColor(QPalette.WindowText, QColor(0, 0, 0))
+        palette.setColor(QPalette.Base, QColor(255, 255, 255))
+        palette.setColor(QPalette.AlternateBase, QColor(240, 240, 240))
+        palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 220))
+        palette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))
+        palette.setColor(QPalette.Text, QColor(0, 0, 0))
+        palette.setColor(QPalette.Button, QColor(240, 240, 240))
+        palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))
+        palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
+        palette.setColor(QPalette.Link, QColor(0, 0, 255))
+        palette.setColor(QPalette.Highlight, QColor(0, 120, 215))
+        palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
+        QApplication.setPalette(palette)
+    
+    def apply_dark_theme(self):
+        """Применение темной темы."""
+        palette = QPalette()
+        palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        palette.setColor(QPalette.WindowText, QColor(255, 255, 255))
+        palette.setColor(QPalette.Base, QColor(35, 35, 35))
+        palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        palette.setColor(QPalette.ToolTipBase, QColor(0, 0, 0))
+        palette.setColor(QPalette.ToolTipText, QColor(255, 255, 255))
+        palette.setColor(QPalette.Text, QColor(255, 255, 255))
+        palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        palette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
+        palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
+        palette.setColor(QPalette.Link, QColor(42, 130, 218))
+        palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
+        palette.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
+        QApplication.setPalette(palette)
+    
+    def apply_font_size(self, size: int):
+        """Применение размера шрифта ко всем виджетам."""
+        font = QFont()
+        font.setPointSize(size)
+        QApplication.setFont(font)
+    
     def search_prompts(self):
         """Поиск промтов."""
         from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QListWidget
@@ -715,6 +844,11 @@ def main():
     
     # Установка стиля приложения
     app.setStyle('Fusion')
+    
+    # Установка иконки приложения
+    icon_path = os.path.join(os.path.dirname(__file__), "app.ico")
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
     
     window = MainWindow()
     window.show()

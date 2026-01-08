@@ -165,10 +165,31 @@ class GroqModel(BaseModel):
 class OpenRouterModel(BaseModel):
     """Класс для работы с OpenRouter API."""
     
+    # Дефолтный URL для всех OpenRouter моделей
+    DEFAULT_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+    
+    def __init__(self, model_data: Dict, db: Database):
+        """Инициализация с использованием дефолтного URL и OPENROUTER_API_KEY."""
+        super().__init__(model_data, db)
+        # Переопределяем API URL на дефолтный для OpenRouter
+        self.api_url = self.DEFAULT_API_URL
+        # Переопределяем API ключ на OPENROUTER_API_KEY
+        self.api_key = self._get_api_key()
+    
+    def _get_api_key(self) -> Optional[str]:
+        """Получение API-ключа из переменных окружения (всегда OPENROUTER_API_KEY)."""
+        return os.getenv("OPENROUTER_API_KEY")
+    
+    def _get_api_url(self, default_url: str) -> str:
+        """Всегда возвращает дефолтный URL для OpenRouter."""
+        return self.DEFAULT_API_URL
+    
     def format_request(self, prompt: str) -> Dict:
         """Форматирование запроса для OpenRouter API."""
+        # Используем api_model_name если задано, иначе используем name
+        model_name = self.api_model_name if self.api_model_name else self.name
         return {
-            "model": self.name,
+            "model": model_name,
             "messages": [
                 {"role": "user", "content": prompt}
             ],

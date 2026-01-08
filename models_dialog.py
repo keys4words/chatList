@@ -191,14 +191,16 @@ class ModelEditDialog(QDialog):
         
         # API URL
         url_layout = QHBoxLayout()
-        url_layout.addWidget(QLabel("API URL:"))
+        self.url_label = QLabel("API URL:")
+        url_layout.addWidget(self.url_label)
         self.url_input = QLineEdit()
         url_layout.addWidget(self.url_input)
         layout.addLayout(url_layout)
         
         # API ID (имя переменной окружения)
         api_id_layout = QHBoxLayout()
-        api_id_layout.addWidget(QLabel("API ID (имя переменной в .env):"))
+        self.api_id_label = QLabel("API ID (имя переменной в .env):")
+        api_id_layout.addWidget(self.api_id_label)
         self.api_id_input = QLineEdit()
         api_id_layout.addWidget(self.api_id_input)
         layout.addLayout(api_id_layout)
@@ -222,6 +224,7 @@ class ModelEditDialog(QDialog):
             "openrouter",
             "openai-compatible"
         ])
+        self.type_combo.currentTextChanged.connect(self.on_type_changed)
         type_layout.addWidget(self.type_combo)
         layout.addLayout(type_layout)
         
@@ -243,6 +246,26 @@ class ModelEditDialog(QDialog):
         buttons_layout.addWidget(cancel_button)
         
         layout.addLayout(buttons_layout)
+        
+        # Инициализация видимости полей в зависимости от типа модели
+        self.on_type_changed(self.type_combo.currentText())
+    
+    def on_type_changed(self, model_type: str):
+        """Обработка изменения типа модели - скрытие/показ полей для OpenRouter."""
+        is_openrouter = (model_type == "openrouter")
+        
+        # Скрываем/показываем API URL и API ID для OpenRouter
+        self.url_label.setVisible(not is_openrouter)
+        self.url_input.setVisible(not is_openrouter)
+        
+        self.api_id_label.setVisible(not is_openrouter)
+        self.api_id_input.setVisible(not is_openrouter)
+        
+        # Обновляем placeholder для имени модели
+        if is_openrouter:
+            self.model_name_input.setPlaceholderText("Например: openai/gpt-4, anthropic/claude-3-opus и т.д.")
+        else:
+            self.model_name_input.setPlaceholderText("Оставьте пустым для использования из .env или значения по умолчанию")
     
     def load_model_data(self):
         """Загрузка данных модели в форму."""
@@ -261,19 +284,34 @@ class ModelEditDialog(QDialog):
                 self.type_combo.setCurrentIndex(index)
             
             self.active_checkbox.setChecked(bool(self.model_data['is_active']))
+            
+            # Обновляем видимость полей после загрузки данных
+            self.on_type_changed(self.model_data['model_type'])
     
     def save_model(self):
         """Сохранение модели."""
         name = self.name_input.text().strip()
-        url = self.url_input.text().strip()
-        api_id = self.api_id_input.text().strip()
         model_type = self.type_combo.currentText()
         is_active = 1 if self.active_checkbox.isChecked() else 0
         api_model_name = self.model_name_input.text().strip() or None
         
-        if not all([name, url, api_id]):
-            QMessageBox.warning(self, "Предупреждение", "Заполните все обязательные поля!")
-            return
+        # Для OpenRouter моделей используем дефолтные значения
+        if model_type == "openrouter":
+            url = "https://openrouter.ai/api/v1/chat/completions"
+            api_id = "OPENROUTER_API_KEY"
+            # Для OpenRouter имя модели обязательно
+            if not name:
+                QMessageBox.warning(self, "Предупреждение", "Заполните название модели!")
+                return
+            if not api_model_name:
+                QMessageBox.warning(self, "Предупреждение", "Для моделей OpenRouter необходимо указать имя модели (для API)!")
+                return
+        else:
+            url = self.url_input.text().strip()
+            api_id = self.api_id_input.text().strip()
+            if not all([name, url, api_id]):
+                QMessageBox.warning(self, "Предупреждение", "Заполните все обязательные поля!")
+                return
         
         try:
             if self.model_data:

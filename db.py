@@ -7,17 +7,33 @@ import os
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 
+# Импортируем утилиту для определения путей
+try:
+    from app_paths import get_db_path
+except ImportError:
+    # Если app_paths не доступен (старая версия), используем текущую директорию
+    def get_db_path():
+        return "chatlist.db"
+
 
 class Database:
     """Класс для работы с базой данных."""
     
-    def __init__(self, db_path: str = "chatlist.db"):
+    def __init__(self, db_path: Optional[str] = None):
         """
         Инициализация подключения к БД.
         
         Args:
-            db_path: Путь к файлу базы данных
+            db_path: Путь к файлу базы данных (если None, определяется автоматически)
         """
+        if db_path is None:
+            db_path = get_db_path()
+        
+        # Создаем директорию для базы данных, если нужно
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+        
         self.db_path = db_path
         self.conn = None
         self.connect()
@@ -26,8 +42,21 @@ class Database:
     
     def connect(self):
         """Установка соединения с БД."""
-        self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
+        try:
+            self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
+            self.conn.row_factory = sqlite3.Row
+        except sqlite3.OperationalError as e:
+            # Если не удается создать БД, пробуем в текущей директории
+            if "unable to open database file" in str(e).lower():
+                fallback_path = os.path.join(os.getcwd(), "chatlist.db")
+                if fallback_path != self.db_path:
+                    self.db_path = fallback_path
+                    self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
+                    self.conn.row_factory = sqlite3.Row
+                else:
+                    raise
+            else:
+                raise
     
     def close(self):
         """Закрытие соединения с БД."""

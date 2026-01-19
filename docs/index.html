@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ChatList - Send prompts to multiple AI models simultaneously and compare responses">
+    <title>ChatList - Multi-AI Model Comparison Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            padding: 60px 20px 40px;
+        }
+
+        header h1 {
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+            margin-bottom: 30px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 0 5px;
+        }
+
+        .content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 40px 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 40px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 10px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .download-btn.secondary {
+            background: #6c757d;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .feature-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-card li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .feature-card li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .screenshots {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .screenshots img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin: 10px;
+        }
+
+        .info-section {
+            margin: 40px 0;
+        }
+
+        .info-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .info-section p {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+            margin-top: 60px;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: underline;
+            margin: 0 10px;
+        }
+
+        .footer a:hover {
+            opacity: 0.8;
+        }
+
+        .version-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2.5em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🚀 ChatList</h1>
+            <p>Send prompts to multiple AI models simultaneously and compare responses</p>
+            <div>
+                <span class="badge">v1.0.0</span>
+                <span class="badge">Windows</span>
+                <span class="badge">Free & Open Source</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content">
+            <div class="download-section">
+                <h2>📥 Download ChatList</h2>
+                <p style="margin-bottom: 30px; font-size: 1.1em;">
+                    Choose the installation method that works best for you
+                </p>
+                <a href="https://github.com/YOUR_USERNAME/chatList/releases/latest/download/ChatList-Setup-v1.0.0.exe" 
+                   class="download-btn">
+                    📦 Download Installer
+                </a>
+                <a href="https://github.com/YOUR_USERNAME/chatList/releases/latest/download/ChatList-v1.0.0.exe" 
+                   class="download-btn secondary">
+                    ⚡ Download Standalone
+                </a>
+                <div class="version-info">
+                    <strong>Latest Version:</strong> v1.0.0 | 
+                    <a href="https://github.com/YOUR_USERNAME/chatList/releases">View All Releases</a>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h2>✨ Features</h2>
+                <div class="features">
+                    <div class="feature-card">
+                        <h3>🎯 Multi-Model Support</h3>
+                        <ul>
+                            <li>OpenAI (GPT-4, GPT-3.5)</li>
+                            <li>DeepSeek</li>
+                            <li>Groq</li>
+                            <li>OpenRouter</li>
+                            <li>Custom models</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h3>💾 Data Management</h3>
+                        <ul>
+                            <li>Save prompts & results</li>
+                            <li>Tag and categorize</li>
+                            <li>Search and filter</li>
+                            <li>Export to Markdown/JSON</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h3>⚡ Performance</h3>
+                        <ul>
+                            <li>Async requests</li>
+                            <li>Fast comparison</li>
+                            <li>Comprehensive logging</li>
+                            <li>Easy model management</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h2>🚀 Quick Start</h2>
+                <p><strong>1. Install ChatList</strong></p>
+                <p>Download and run the installer, or use the standalone executable.</p>
+
+                <p><strong>2. Configure API Keys</strong></p>
+                <p>Create a <code>.env</code> file in the application directory:</p>
+                <div class="code-block">
+OPENAI_API_KEY=sk-your-key-here
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+DEEPSEEK_API_KEY=sk-your-key-here
+GROQ_API_KEY=gsk_your-key-here
+                </div>
+
+                <p><strong>3. Add Models</strong></p>
+                <p>Use "Models" → "Manage Models..." to add and configure AI models.</p>
+
+                <p><strong>4. Start Comparing</strong></p>
+                <p>Enter a prompt, select active models, and click "Send Request" to compare responses!</p>
+            </div>
+
+            <div class="info-section">
+                <h2>📸 Screenshots</h2>
+                <div class="screenshots">
+                    <p style="color: #666; margin-bottom: 20px;">
+                        Add screenshots of your application here
+                    </p>
+                    <!-- 
+                    <img src="screenshot1.png" alt="ChatList Main Window">
+                    <img src="screenshot2.png" alt="Model Management">
+                    -->
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h2>📚 Documentation</h2>
+                <p>
+                    For detailed documentation, installation instructions, and configuration options, 
+                    visit the <a href="https://github.com/YOUR_USERNAME/chatList">GitHub repository</a>.
+                </p>
+                <ul style="margin-top: 20px; list-style: none; padding-left: 0;">
+                    <li style="padding: 5px 0;">📖 <a href="https://github.com/YOUR_USERNAME/chatList/blob/main/README.md">Full README</a></li>
+                    <li style="padding: 5px 0;">📝 <a href="https://github.com/YOUR_USERNAME/chatList/blob/main/USER_GUIDE.md">User Guide</a></li>
+                    <li style="padding: 5px 0;">🐛 <a href="https://github.com/YOUR_USERNAME/chatList/issues">Report Issues</a></li>
+                    <li style="padding: 5px 0;">💬 <a href="https://github.com/YOUR_USERNAME/chatList/discussions">Discussions</a></li>
+                </ul>
+            </div>
+
+            <div class="info-section">
+                <h2>🤝 Contributing</h2>
+                <p>
+                    ChatList is open source! Contributions are welcome. 
+                    Check out the <a href="https://github.com/YOUR_USERNAME/chatList">repository</a> 
+                    to get started.
+                </p>
+            </div>
+
+            <div class="info-section">
+                <h2>📄 License</h2>
+                <p>
+                    This project is licensed under the MIT License. 
+                    See the <a href="https://github.com/YOUR_USERNAME/chatList/blob/main/LICENSE">LICENSE</a> file for details.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>
+                <a href="https://github.com/YOUR_USERNAME/chatList">GitHub</a> |
+                <a href="https://github.com/YOUR_USERNAME/chatList/releases">Releases</a> |
+                <a href="https://github.com/YOUR_USERNAME/chatList/issues">Issues</a> |
+                <a href="https://github.com/YOUR_USERNAME/chatList/blob/main/LICENSE">License</a>
+            </p>
+            <p style="margin-top: 20px; opacity: 0.8;">
+                Made with ❤️ using PyQt5
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
+

@@ -32,6 +32,12 @@ MANIFEST
 *.manifest
 *.spec
 
+# Inno Setup
+installer/
+
+# Release files (temporary, don't commit)
+release/
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt

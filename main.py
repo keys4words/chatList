@@ -27,6 +27,7 @@ from prompt_improver import PromptImprover
 from prompt_improver_dialog import PromptImproverDialog
 from settings_dialog import SettingsDialog
 from about_dialog import AboutDialog
+from version import __version__
 
 
 class RequestThread(QThread):
@@ -100,7 +101,7 @@ class MainWindow(QMainWindow):
     
     def init_ui(self):
         """Инициализация пользовательского интерфейса."""
-        self.setWindowTitle("ChatList - Сравнение ответов нейросетей")
+        self.setWindowTitle(f"ChatList v{__version__} - Сравнение ответов нейросетей")
         self.setGeometry(100, 100, 1200, 800)
         
         # Установка иконки приложения

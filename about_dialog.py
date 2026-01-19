@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
+from version import __version__
 
 
 class AboutDialog(QDialog):
@@ -69,8 +70,8 @@ ChatList — это Python-приложение для сравнения отв
 • SQLite для хранения данных
 • Поддержка различных AI API
 
-Версия: 1.0.0
-        """.strip())
+Версия: {__version__}
+        """.format(__version__=__version__).strip())
         layout.addWidget(info_text)
         
         layout.addSpacing(10)

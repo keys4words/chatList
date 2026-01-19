@@ -21,6 +21,15 @@ def init_sample_models():
     # Получение OPENAI_BASE_URL из переменных окружения
     import os
     from dotenv import load_dotenv
+    # Загружаем .env из правильного места
+    try:
+        from app_paths import get_env_path
+        env_path = get_env_path()
+        if os.path.exists(env_path):
+            load_dotenv(env_path)
+    except ImportError:
+        pass
+    # Также пробуем загрузить из текущей директории (для обратной совместимости)
     load_dotenv()
     openai_base_url = os.getenv("OPENAI_BASE_URL", "")
     

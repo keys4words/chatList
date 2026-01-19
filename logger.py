@@ -6,6 +6,18 @@ import os
 from datetime import datetime
 from typing import Dict, Optional
 from db import Database
+from version import __version__
+
+# Импортируем утилиту для определения путей
+try:
+    from app_paths import get_logs_dir
+except ImportError:
+    # Если app_paths не доступен (старая версия), используем текущую директорию
+    def get_logs_dir():
+        log_dir = "logs"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+        return log_dir
 
 
 class AppLogger:
@@ -24,10 +36,7 @@ class AppLogger:
         
         # Настройка файлового логирования
         if log_to_file:
-            log_dir = "logs"
-            if not os.path.exists(log_dir):
-                os.makedirs(log_dir)
-            
+            log_dir = get_logs_dir()
             log_file = os.path.join(log_dir, f"chatlist_{datetime.now().strftime('%Y%m%d')}.log")
             
             logging.basicConfig(
@@ -46,6 +55,7 @@ class AppLogger:
             )
         
         self.logger = logging.getLogger('ChatList')
+        self.logger.info(f"ChatList версия {__version__} запущен")
     
     def log_request(self, prompt: str, model_name: str, success: bool,
                    response: Optional[str] = None, error: Optional[str] = None):

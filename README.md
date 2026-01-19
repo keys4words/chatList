@@ -4,11 +4,23 @@
 
 ## Установка
 
+### Установка из исходников
+
 1. Установите зависимости:
 
 ```powershell
 pip install -r requirements.txt
 ```
+
+### Установка через установщик (Windows)
+
+Для создания установщика используйте скрипт `build_installer.ps1` или `build_installer.bat`:
+
+```powershell
+.\build_installer.ps1
+```
+
+Установщик будет создан в папке `installer/`. Подробнее см. [INSTALLER.md](INSTALLER.md).
 
 2. Создайте файл `.env` в корне проекта и добавьте ваши API-ключи:
 

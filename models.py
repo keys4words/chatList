@@ -9,7 +9,17 @@ from dotenv import load_dotenv
 from db import Database
 
 # Загрузка переменных окружения
-load_dotenv()
+try:
+    from app_paths import get_env_path
+    env_path = get_env_path()
+    # Загружаем .env из правильного места, если существует
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+    # Также пробуем загрузить из текущей директории (для обратной совместимости)
+    load_dotenv()
+except ImportError:
+    # Если app_paths не доступен, используем стандартную загрузку
+    load_dotenv()
 
 
 class BaseModel(ABC):
